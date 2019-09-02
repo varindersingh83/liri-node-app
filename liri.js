@@ -1,3 +1,4 @@
+//calling are required liberaries.
 require('dotenv').config()
 var keys = require('./keys.js')
 var Spotify = require('node-spotify-api')
@@ -5,13 +6,13 @@ const axios = require('axios')
 var moment = require('moment')
 var r = require('request')
 var fs = require('fs')
-
 var spotify = new Spotify(keys.spotify)
+
+//command line send argument and value after second argument
 var command = process.argv[2]
-// console.log(' command = ' + command)
 var commandValue = process.argv.slice(3).join(' ')
-// console.log('command type = ' + typeof commandValue)
-// console.log('command value = ' + commandValue)
+
+//calling specific function based on command in commandline.
 switch (command) {
   case 'concert-this':
     commandValue == '' ? getConcert() : getConcert(commandValue)
@@ -28,96 +29,103 @@ switch (command) {
   default:
     break
 }
-/*
-   - `concert-this`
-   - `spotify-this-song`
-   - `movie-this`
-   - `do-what-it-says`
-*/
 
+// get track info from spotify. default track name is Ace
 async function searchSpotify(trackName = 'The Sign Ace of Base') {
   spotify.search({ type: 'track', query: trackName }, function(err, data) {
     if (err) {
-      return console.log('Error occurred: ' + err)
+      return appendToLog('Error occurred: ' + err)
     }
-    console.log('========================')
-    console.log('tracks found ' + data.tracks.items.length)
+    appendToLog('========================')
+    appendToLog('tracks found ' + data.tracks.items.length)
     for (var i = 0; i < data.tracks.items.length; i++) {
-      console.log(
+      appendToLog(
         'Artist = ' + JSON.stringify(data.tracks.items[i].album.artists[0].name)
       )
-      console.log('Song = ' + JSON.stringify(data.tracks.items[i].name))
-      console.log(
+      appendToLog('Song = ' + JSON.stringify(data.tracks.items[i].name))
+      appendToLog(
         'Link = ' + JSON.stringify(data.tracks.items[i].external_urls.spotify)
       )
-      console.log('Album = ' + JSON.stringify(data.tracks.items[i].album.name))
-      console.log('========================')
+      appendToLog('Album = ' + JSON.stringify(data.tracks.items[i].album.name))
+      appendToLog('========================')
     }
   })
 }
 
+//get concert list by artist name. default artist name is guns and roses
 async function getConcert(artistName = 'guns and roses') {
   url = `https://rest.bandsintown.com/artists/${artistName}/events?app_id=codingbootcamp`
   axios.get(url).then(function(response) {
     if (response.data.length == 0) {
-      console.log(
+      appendToLog(
         `No concert list available for artist ${artistName}. Try artists like: Billie Eilish, Madona`
       )
     }
-    console.log('============================')
+    appendToLog('============================')
     for (var concertInfo of response.data) {
-      console.log('Artist name: ' + artistName)
-      console.log(concertInfo.venue.name)
-      console.log(concertInfo.venue.city)
+      appendToLog('Artist name: ' + artistName)
+      appendToLog(concertInfo.venue.name)
+      appendToLog(concertInfo.venue.city)
       var dateConcert = concertInfo.datetime
       var formattedDate = moment(dateConcert).format('MM/DD/YYYY')
-      console.log(formattedDate)
-      console.log('============================')
+      appendToLog(formattedDate)
+      appendToLog('============================')
     }
   })
 }
 
+//get movie data from ombdAPI and default parameter value = Mr. Nobody.
 async function getMovie(movieName = 'Mr. Nobody.') {
   var apiCall =
     'https://www.omdbapi.com/?t=' + movieName + '&y=&plot=short&apikey=trilogy'
 
   r(apiCall, function(error, response, data) {
-    // console.log(data)
-    console.log(`Title of the movie:       ${JSON.parse(data).Title}`)
-    console.log(`Year the movie came out:  ${JSON.parse(data).Year}`)
-    console.log(`IMDB Rating:              ${JSON.parse(data).imdbRating}`)
-    console.log(
+    appendToLog(`Title of the movie:       ${JSON.parse(data).Title}`)
+    appendToLog(`Year the movie came out:  ${JSON.parse(data).Year}`)
+    appendToLog(`IMDB Rating:              ${JSON.parse(data).imdbRating}`)
+    appendToLog(
       `Rotten Tomatoes Rating:   ${JSON.parse(data).Ratings[1].Value}`
     )
-    console.log(`Country:                  ${JSON.parse(data).Country}`)
-    console.log(`Language of the movie:    ${JSON.parse(data).Language}`)
-    console.log(`Plot:                     ${JSON.parse(data).Plot}`)
-    console.log(`Actors:                   ${JSON.parse(data).Actors}`)
+    appendToLog(`Country:                  ${JSON.parse(data).Country}`)
+    appendToLog(`Language of the movie:    ${JSON.parse(data).Language}`)
+    appendToLog(`Plot:                     ${JSON.parse(data).Plot}`)
+    appendToLog(`Actors:                   ${JSON.parse(data).Actors}`)
   })
 }
 
+//read from random.txt and call function based on text in random txt
 async function doWhatItSays() {
-  //running code SYNCRONOUSLY
   var contents = fs.readFileSync('./random.txt', 'utf8')
   var arr = contents.split(',')
-  command = arr[0]
-  commandValue = arr[1].replace('"', '').replace('"', '')
+  commandText = arr[0]
+  commandValueText = arr[1]
+  if (commandText[0] == '"') {
+    commandValueText = commandValueText.replace('"', '').replace('"', '')
+  }
 
-  // console.log('command = ' + command)
-  // console.log('command value = ' + commandValue)
-  switch (command) {
+  switch (commandText) {
     case 'concert-this':
-      commandValue == '' ? getConcert() : getConcert(commandValue)
+      commandValueText == '' ? getConcert() : getConcert(commandValueText)
       break
     case 'spotify-this-song':
-      commandValue == '' ? searchSpotify() : searchSpotify(commandValue)
+      commandValueText == '' ? searchSpotify() : searchSpotify(commandValueText)
       break
     case 'movie-this':
-      commandValue == '' ? getMovie() : getMovie(commandValue)
+      commandValueText == '' ? getMovie() : getMovie(commandValueText)
       break
     default:
-      console.log('no valid option selected')
+      appendToLog(
+        'valid option not selected: text should be in following format:\nspotify-this-song,"I Want it That Way"\nmovie-this,"the terminator"\nconcert-this,"Madona"'
+      )
       break
   }
-  // console.log('======')
+}
+
+//Console log and append to log file
+async function appendToLog(logText) {
+  logText = logText + '\n'
+  console.log(logText)
+  fs.appendFileSync('./log.txt', logText, 'utf8', function(err) {
+    appendToLog(err)
+  })
 }
